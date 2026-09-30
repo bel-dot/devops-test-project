@@ -3,43 +3,38 @@
 # ==========================================
 FROM golang:1.25-alpine AS builder
 
-# Встановлюємо робочу директорію
 WORKDIR /src
 
-# Крок 1: Кешування залежностей
-# Копіюємо лише файли модулів і завантажуємо залежності
+# 1. Завантаження залежностей
 COPY go.mod go.sum ./
 RUN go mod download
 
-# Крок 2: Копіюємо решту сирцевого коду
+# 2. Копіюємо сирцевий код
 COPY . .
 
-# Крок 3: Компіляція статичного бінарного файлу
-RUN CGO_ENABLED=0 GOOS=linux go build -o /app/frontend .
+# 3. Компіляція бінарного файлу у /src/productcatalogservice
+RUN CGO_ENABLED=0 GOOS=linux go build -o productcatalogservice .
 
 # ==========================================
-# ЕТАП 2: Фінальний мінімальний образ (Runtime Stage)
+# ЕТАП 2: Фінальний образ (Runtime Stage)
 # ==========================================
 FROM alpine:3.20
 
-# Встановлюємо CA-сертифікати (потрібні для HTTPS/TLS та gRPC з'єднань)
-RUN apk add --no-cache ca-certificates tzdata
-
-# Створюємо непривілейованого користувача з міркувань безпеки
-RUN addgroup -S appgroup && adduser -S appuser -G appgroup
-
 WORKDIR /app
 
-# Копіюємо лише скомпільований бінарний файл з етапу builder
-COPY --from=builder /app/frontend /app/frontend
+RUN apk add --no-cache ca-certificates tzdata
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 
-# Змінюємо власника файлів на непривілейованого користувача
+# Копіюємо бінарник із директорії /src першого етапу
+COPY --from=builder /src/productcatalogservice /app/productcatalogservice
+
+# Копіюємо JSON-файл з каталогом товарів з директорії /src
+COPY --from=builder /src/products.json /app/products.json
+
 RUN chown -R appuser:appgroup /app
 USER appuser
 
-# Вказуємо порт та змінні за замовчуванням
-EXPOSE 3550 
+EXPOSE 3550
 ENV PORT=3550
 
-# Запуск додатка
-ENTRYPOINT ["/app/frontend"]
+ENTRYPOINT ["/app/productcatalogservice"]

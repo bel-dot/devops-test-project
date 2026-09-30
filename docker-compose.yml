@@ -13,6 +13,12 @@ services:
       - PORT=8080
       - PRODUCT_CATALOG_SERVICE_ADDR=productcatalogservice:3550
       - CART_SERVICE_ADDR=cartservice:7070
+      - CURRENCY_SERVICE_ADDR=cartservice:3550
+      - SHIPPING_SERVICE_ADDR=cartservice:3550
+      - SHOPPING_ASSISTANT_SERVICE_ADDR=cartservice:3550
+      - CHECKOUT_SERVICE_ADDR=cartservice:3550
+      - AD_SERVICE_ADDR=cartservice:3550
+      - RECOMMENDATION_SERVICE_ADDR=cartservice:3550
       - DISABLE_PROFILER=1
       - DISABLE_TRACING=1
     depends_on:
