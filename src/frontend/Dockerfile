@@ -1,7 +1,7 @@
 # ==========================================
 # ЕТАП 1: Збірка (Builder Stage)
 # ==========================================
-FROM golang:1.22-alpine AS builder
+FROM golang:1.25-alpine AS builder
 
 # Встановлюємо робочу директорію
 WORKDIR /src

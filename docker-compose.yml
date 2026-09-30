@@ -1,0 +1,77 @@
+version: '3.8'
+
+services:
+  # 1. Фронтенд (Go) — доступний у браузері
+  frontend:
+    build:
+      context: ./src/frontend
+      dockerfile: Dockerfile
+    container_name: boutique-frontend
+    ports:
+      - "8080:8080"
+    environment:
+      - PORT=8080
+      - PRODUCT_CATALOG_SERVICE_ADDR=productcatalogservice:3550
+      - CART_SERVICE_ADDR=cartservice:7070
+      - DISABLE_PROFILER=1
+      - DISABLE_TRACING=1
+    depends_on:
+      - productcatalogservice
+      - cartservice
+    networks:
+      - boutique-net
+    restart: unless-stopped
+
+  # 2. Каталог товарів (Go) — gRPC бекенд
+  productcatalogservice:
+    build:
+      context: ./src/productcatalogservice
+      dockerfile: Dockerfile
+    container_name: boutique-productcatalog
+    ports:
+      - "3550:3550"
+    environment:
+      - PORT=3550
+      - DISABLE_PROFILER=1
+      - DISABLE_TRACING=1
+    networks:
+      - boutique-net
+    restart: unless-stopped
+
+  # 3. Сервіс кошика (.NET) — gRPC бекенд
+  cartservice:
+    build:
+      context: ./src/cartservice
+      dockerfile: src/Dockerfile
+    container_name: boutique-cart
+    ports:
+      - "7070:7070"
+    environment:
+      - PORT=7070
+      - REDIS_ADDR=redis:6379
+    depends_on:
+      - redis
+    networks:
+      - boutique-net
+    restart: unless-stopped
+
+  # 4. База даних Redis — офіційний образ
+  redis:
+    image: redis:7-alpine
+    container_name: boutique-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - boutique-net
+    restart: unless-stopped
+
+# Спільна ізольована мережа для контейнерів
+networks:
+  boutique-net:
+    driver: bridge
+
+# Збереження даних Redis при перезапуску
+volumes:
+  redis-data:
