@@ -35,10 +35,5 @@ COPY --from=builder /app/published ./
 RUN chown -R appuser:appgroup /app
 USER appuser
 
-# Вказуємо порт та змінні середовища
-EXPOSE 7070
-ENV LISTEN_ADDR=0.0.0.0
-ENV PORT=7070
-
 # Запуск .NET додатку через DLL-файл
 ENTRYPOINT ["dotnet", "cartservice.dll"]

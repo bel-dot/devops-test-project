@@ -1,7 +1,7 @@
 # ==========================================
 # ЕТАП 1: Збірка (Builder Stage)
 # ==========================================
-FROM golang:1.25-alpine AS builder
+FROM golang:1.26-alpine AS builder
 
 # Встановлюємо робочу директорію
 WORKDIR /src
@@ -40,10 +40,6 @@ COPY --from=builder /src/static ./static
 # Змінюємо власника файлів на непривілейованого користувача
 RUN chown -R appuser:appgroup /app
 USER appuser
-
-# Вказуємо порт та змінні за замовчуванням
-EXPOSE 8080
-ENV PORT=8080
 
 # Запуск додатка
 ENTRYPOINT ["/app/frontend"]

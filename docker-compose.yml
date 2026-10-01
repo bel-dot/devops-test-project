@@ -1,7 +1,7 @@
 version: '3.8'
 
 services:
-  # 1. Фронтенд (Go) — доступний у браузері
+  # 1. Frontend (Go) — Веб-інтерфейс
   frontend:
     build:
       context: ./src/frontend
@@ -12,23 +12,27 @@ services:
     environment:
       - PORT=8080
       - PRODUCT_CATALOG_SERVICE_ADDR=productcatalogservice:3550
+      - CURRENCY_SERVICE_ADDR=currencyservice:7000
       - CART_SERVICE_ADDR=cartservice:7070
-      - CURRENCY_SERVICE_ADDR=cartservice:3550
-      - SHIPPING_SERVICE_ADDR=cartservice:3550
-      - SHOPPING_ASSISTANT_SERVICE_ADDR=cartservice:3550
-      - CHECKOUT_SERVICE_ADDR=cartservice:3550
-      - AD_SERVICE_ADDR=cartservice:3550
-      - RECOMMENDATION_SERVICE_ADDR=cartservice:3550
+      - RECOMMENDATION_SERVICE_ADDR=recommendationservice:8080
+      - CHECKOUT_SERVICE_ADDR=checkoutservice:5050
+      - SHIPPING_SERVICE_ADDR=shippingservice:50051
+      - SHOPPING_ASSISTANT_SERVICE_ADDR=shippingservice:50051
+      - AD_SERVICE_ADDR=adservice:9555
       - DISABLE_PROFILER=1
       - DISABLE_TRACING=1
     depends_on:
       - productcatalogservice
+      - currencyservice
       - cartservice
+      - checkoutservice
+      - recommendationservice
+      - adservice
     networks:
       - boutique-net
     restart: unless-stopped
 
-  # 2. Каталог товарів (Go) — gRPC бекенд
+  # 2. Product Catalog Service (Go) — Каталог товарів
   productcatalogservice:
     build:
       context: ./src/productcatalogservice
@@ -44,7 +48,23 @@ services:
       - boutique-net
     restart: unless-stopped
 
-  # 3. Сервіс кошика (.NET) — gRPC бекенд
+  # 3. Currency Service (Node.js) — Сервіс валют
+  currencyservice:
+    build:
+      context: ./src/currencyservice
+      dockerfile: Dockerfile
+    container_name: boutique-currency
+    ports:
+      - "7000:7000"
+    environment:
+      - PORT=7000
+      - DISABLE_PROFILER=1
+      - DISABLE_TRACING=1
+    networks:
+      - boutique-net
+    restart: unless-stopped
+
+  # 4. Cart Service (.NET) — Сервіс кошика
   cartservice:
     build:
       context: ./src/cartservice
@@ -54,6 +74,7 @@ services:
       - "7070:7070"
     environment:
       - PORT=7070
+      - ASPNETCORE_HTTP_PORTS=7070
       - REDIS_ADDR=redis:6379
     depends_on:
       - redis
@@ -61,7 +82,7 @@ services:
       - boutique-net
     restart: unless-stopped
 
-  # 4. База даних Redis — офіційний образ
+  # 5. Redis — База даних для кошика
   redis:
     image: redis:7-alpine
     container_name: boutique-redis
@@ -73,11 +94,121 @@ services:
       - boutique-net
     restart: unless-stopped
 
-# Спільна ізольована мережа для контейнерів
+  # 6. Checkout Service (Go) — Оформлення замовлення
+  checkoutservice:
+    build:
+      context: ./src/checkoutservice
+      dockerfile: Dockerfile
+    container_name: boutique-checkout
+    ports:
+      - "5050:5050"
+    environment:
+      - PORT=5050
+      - PRODUCT_CATALOG_SERVICE_ADDR=productcatalogservice:3550
+      - SHIPPING_SERVICE_ADDR=shippingservice:50051
+      - CURRENCY_SERVICE_ADDR=currencyservice:7000
+      - CART_SERVICE_ADDR=cartservice:7070
+      - PAYMENT_SERVICE_ADDR=paymentservice:50051
+      - EMAIL_SERVICE_ADDR=emailservice:8080
+      - DISABLE_PROFILER=1
+      - DISABLE_TRACING=1
+    depends_on:
+      - productcatalogservice
+      - shippingservice
+      - currencyservice
+      - cartservice
+      - paymentservice
+      - emailservice
+    networks:
+      - boutique-net
+    restart: unless-stopped
+
+  # 7. Payment Service (Node.js) — Оплата
+  paymentservice:
+    build:
+      context: ./src/paymentservice
+      dockerfile: Dockerfile
+    container_name: boutique-payment
+    ports:
+      - "50051:50051"
+    environment:
+      - PORT=50051
+      - DISABLE_PROFILER=1
+      - DISABLE_TRACING=1
+    networks:
+      - boutique-net
+    restart: unless-stopped
+
+  # 8. Shipping Service (Go) — Доставка
+  shippingservice:
+    build:
+      context: ./src/shippingservice
+      dockerfile: Dockerfile
+    container_name: boutique-shipping
+    ports:
+      - "50052:50051"
+    environment:
+      - PORT=50051
+      - DISABLE_PROFILER=1
+      - DISABLE_TRACING=1
+    networks:
+      - boutique-net
+    restart: unless-stopped
+
+  # 9. Email Service (Python) — Сповіщення
+  emailservice:
+    build:
+      context: ./src/emailservice
+      dockerfile: Dockerfile
+    container_name: boutique-email
+    ports:
+      - "8081:8080"
+    environment:
+      - PORT=8080
+      - DISABLE_PROFILER=1
+      - DISABLE_TRACING=1
+    networks:
+      - boutique-net
+    restart: unless-stopped
+
+  # 10. Recommendation Service (Python) — Рекомендації
+  recommendationservice:
+    build:
+      context: ./src/recommendationservice
+      dockerfile: Dockerfile
+    container_name: boutique-recommendation
+    ports:
+      - "8082:8080"
+    environment:
+      - PORT=8080
+      - PRODUCT_CATALOG_SERVICE_ADDR=productcatalogservice:3550
+      - DISABLE_PROFILER=1
+      - DISABLE_TRACING=1
+    depends_on:
+      - productcatalogservice
+    networks:
+      - boutique-net
+    restart: unless-stopped
+
+  # 11. Ad Service (Java) — Реклама
+  adservice:
+    build:
+      context: ./src/adservice
+      dockerfile: Dockerfile
+    container_name: boutique-ad
+    ports:
+      - "9555:9555"
+    environment:
+      - PORT=9555
+      - DISABLE_PROFILER=1
+      - DISABLE_TRACING=1
+    networks:
+      - boutique-net
+    restart: unless-stopped
+
 networks:
   boutique-net:
     driver: bridge
 
-# Збереження даних Redis при перезапуску
 volumes:
   redis-data:

@@ -1,7 +1,7 @@
 # ==========================================
 # ЕТАП 1: Збірка (Builder Stage)
 # ==========================================
-FROM golang:1.25-alpine AS builder
+FROM golang:1.26-alpine AS builder
 
 WORKDIR /src
 
@@ -33,8 +33,5 @@ COPY --from=builder /src/products.json /app/products.json
 
 RUN chown -R appuser:appgroup /app
 USER appuser
-
-EXPOSE 3550
-ENV PORT=3550
 
 ENTRYPOINT ["/app/productcatalogservice"]
