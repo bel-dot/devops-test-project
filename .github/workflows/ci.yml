@@ -169,7 +169,7 @@ jobs:
             dockerfile: src/frontend/Dockerfile
 
           - service: cartservice
-            context: src/cartservice/src
+            context: src/cartservice
             dockerfile: src/cartservice/src/Dockerfile
 
           - service: productcatalogservice
