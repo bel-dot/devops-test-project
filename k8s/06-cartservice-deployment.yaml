@@ -1,0 +1,57 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cartservice
+  namespace: devops-biliakov
+  labels:
+    app: cartservice
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: cartservice
+  template:
+    metadata:
+      labels:
+        app: cartservice
+    spec:
+      containers:
+        - name: server
+          image: ghcr.io/bel-dot/devops-test-project/cartservice:1.0.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+              name: grpc
+          env:
+            - name: PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: cartservice-config
+                  key: PORT
+            - name: LISTEN_ADDR
+              valueFrom:
+                configMapKeyRef:
+                  name: cartservice-config
+                  key: LISTEN_ADDR
+            - name: REDIS_ADDR
+              valueFrom:
+                secretKeyRef:
+                  name: cartservice-secret
+                  key: REDIS_ADDR
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 300m
+              memory: 256Mi
+          readinessProbe:
+            tcpSocket:
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: 8080
+            initialDelaySeconds: 15
+            periodSeconds: 15
