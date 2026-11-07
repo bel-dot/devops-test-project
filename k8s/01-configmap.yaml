@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cartservice-config
+  namespace: devops-biliakov
+data:
+  PORT: "8080"
+  LISTEN_ADDR: "0.0.0.0"

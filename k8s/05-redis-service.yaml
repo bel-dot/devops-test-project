@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis-cart
+  namespace: devops-biliakov
+spec:
+  type: ClusterIP
+  selector:
+    app: redis-cart
+  ports:
+    - port: 6379
+      targetPort: 6379
+      name: redis
