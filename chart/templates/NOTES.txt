@@ -1,0 +1,13 @@
+Дякуємо за встановлення релізу {{ .Release.Name }}!
+
+1. Перевірити статус подів:
+   kubectl get pods -n {{ .Release.Namespace }} -l app.kubernetes.io/instance={{ .Release.Name }}
+
+2. Отримати доступ до сервісу:
+{{- if eq .Values.service.type "NodePort" }}
+   export NODE_IP=$(minikube ip)
+   export NODE_PORT={{ .Values.service.nodePort }}
+   curl -I --http2-prior-knowledge http://$NODE_IP:$NODE_PORT
+{{- else }}
+   kubectl port-forward -n {{ .Release.Namespace }} svc/{{ include "cartservice.fullname" . }} 8080:{{ .Values.service.port }}
+{{- end }}
