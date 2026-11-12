@@ -1,0 +1,46 @@
+replicaCount: 1
+
+image:
+  repository: ghcr.io/bel-dot/devops-test-project/cartservice
+  pullPolicy: IfNotPresent
+  tag: "1.0.0"
+
+service:
+  type: NodePort
+  port: 8080
+  nodePort: 30080
+
+config:
+  port: "8080"
+  listenAddr: "0.0.0.0"
+
+secret:
+  redisAddr: "redis-cart:6379"
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: 150m
+    memory: 128Mi
+
+ingress:
+  enabled: false
+  className: "nginx"
+
+redis:
+  enabled: true
+  image:
+    repository: redis
+    tag: "alpine"
+  persistence:
+    enabled: true
+    size: 256Mi
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 100m
+      memory: 128Mi

@@ -1,0 +1,6 @@
+apiVersion: v2
+name: cartservice
+description: Helm chart for Google Online Boutique cartservice with Redis storage
+type: application
+version: 0.1.0
+appVersion: "1.0.0"
